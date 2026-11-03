@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0a14" />
+  <meta name="description" content="Turbo Tales — a procedurally built 3D kart racer with nine hand-crafted circuits and three Grand Prix cups." />
+  <title>Turbo Tales — 3D Kart Racing</title>
+  <link rel="stylesheet" href="style.css?v=20261108" />
+</head>
+<body>
+  <div id="app">
+    <canvas id="view" aria-label="3D race view"></canvas>
+    <div class="vignette" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+    <div id="speedlines" aria-hidden="true"></div>
+    <div id="flash" aria-hidden="true"></div>
+
+    <!-- ───────────────────────── Loading ───────────────────────── -->
+    <div id="loading" class="overlay loading">
+      <div class="loading-mark">
+        <span class="loading-turbo">TURBO</span>
+        <span class="loading-tales">TALES</span>
+      </div>
+      <div class="loading-track"><i></i></div>
+      <p id="loading-label">Shaping the circuit…</p>
+    </div>
+
+    <!-- ───────────────────────── Main menu ───────────────────────── -->
+    <section id="menu" class="screen menu-screen" aria-label="Main menu">
+      <header class="topbar">
+        <div class="wordmark">
+          <span class="wordmark-flag" aria-hidden="true"></span>
+          <span class="wordmark-text"><b>TURBO</b><i>TALES</i></span>
+          <span class="wordmark-tag">Grand Prix</span>
+        </div>
+        <div class="topbar-actions">
+          <button id="btn-help" class="icon-btn" title="How to play" aria-label="How to play">?</button>
+          <button id="btn-sound" class="icon-btn sound-btn" title="Toggle sound" aria-label="Toggle sound">
+            <span class="sound-on" aria-hidden="true"></span><span class="sound-off" aria-hidden="true"></span>
+          </button>
+        </div>
+      </header>
+
+      <div class="menu-grid">
+        <aside class="panel driver-panel">
+          <div class="panel-head">
+            <span class="eyebrow"><em>01</em> Driver</span>
+            <h2>Pick your racer</h2>
+          </div>
+          <div id="driver-slots" class="driver-slots" role="group" aria-label="Player slots">
+            <button type="button" class="driver-slot active" data-slot="0" aria-pressed="true">
+              <span class="slot-tag">P1</span>
+              <span class="slot-avatar" id="slot-p1-icon"></span>
+              <span class="slot-copy"><b id="slot-p1-name">Pip</b><small>WASD</small></span>
+            </button>
+            <button type="button" class="driver-slot" data-slot="1" aria-pressed="false">
+              <span class="slot-tag">P2</span>
+              <span class="slot-avatar" id="slot-p2-icon"></span>
+              <span class="slot-copy"><b id="slot-p2-name">Moss</b><small>Arrow keys</small></span>
+            </button>
+          </div>
+          <div id="racer-grid" class="racer-grid" role="listbox" aria-label="Racers"></div>
+          <div id="driver-detail" class="driver-detail"></div>
+        </aside>
+
+        <section class="panel track-panel">
+          <div class="panel-head track-head">
+            <div>
+              <span class="eyebrow"><em>02</em> Circuit</span>
+              <h2>Choose a course</h2>
+            </div>
+            <span class="cc-badge" id="cc-badge">150cc</span>
+          </div>
+
+          <div class="players-row" role="group" aria-label="Players">
+            <span class="players-label">Players</span>
+            <button type="button" class="player-chip active" data-players="1" aria-pressed="true">1 Player</button>
+            <button type="button" class="player-chip" data-players="2" aria-pressed="false">2 Players · Split</button>
+          </div>
+
+          <div class="mode-row" role="group" aria-label="Game mode">
+            <button type="button" class="mode-chip active" data-mode="quick" aria-pressed="true">Quick Race</button>
+            <button type="button" class="mode-chip" data-mode="gp" aria-pressed="false">Grand Prix</button>
+          </div>
+          <div id="cup-strip" class="cup-strip hidden" role="listbox" aria-label="Grand Prix cups"></div>
+
+          <div id="track-hero" class="track-hero">
+            <canvas id="hero-map" width="720" height="720" aria-hidden="true"></canvas>
+            <div class="hero-fade" aria-hidden="true"></div>
+            <div class="hero-copy">
+              <span id="track-region" class="chip">Meadow Coast</span>
+              <h3 id="track-name">Sunbeam Speedway</h3>
+              <p id="track-blurb"></p>
+              <div class="track-stats">
+                <div><strong id="track-laps">3</strong><small>Laps</small></div>
+                <div><strong id="track-length">—</strong><small>Length</small></div>
+                <div><strong id="track-diff" class="rating-stars"></strong><small>Difficulty</small></div>
+              </div>
+            </div>
+          </div>
+
+          <div id="track-list" class="track-list" role="listbox" aria-label="Tracks"></div>
+
+          <div class="difficulty-row">
+            <div class="difficulty-copy">
+              <span class="eyebrow"><em>03</em> Rivals</span>
+              <strong>CPU skill</strong>
+              <small id="diff-blurb">Balanced pack</small>
+            </div>
+            <div class="difficulty-options" role="group" aria-label="CPU difficulty">
+              <button type="button" class="diff-chip" data-difficulty="easy" aria-pressed="false">Easy</button>
+              <button type="button" class="diff-chip active" data-difficulty="normal" aria-pressed="true">Normal</button>
+              <button type="button" class="diff-chip" data-difficulty="hard" aria-pressed="false">Hard</button>
+              <button type="button" class="diff-chip" data-difficulty="expert" aria-pressed="false">Expert</button>
+            </div>
+          </div>
+
+          <div class="quality-row">
+            <div class="difficulty-copy">
+              <span class="eyebrow"><em>04</em> Graphics</span>
+              <strong id="quality-label">High</strong>
+              <small id="quality-blurb">Rich &amp; smooth</small>
+            </div>
+            <div class="quality-options" role="group" aria-label="Graphics quality">
+              <button type="button" class="quality-chip" data-quality="low" aria-pressed="false">Low</button>
+              <button type="button" class="quality-chip" data-quality="medium" aria-pressed="false">Medium</button>
+              <button type="button" class="quality-chip active" data-quality="high" aria-pressed="true">High</button>
+              <button type="button" class="quality-chip" data-quality="ultra" aria-pressed="false">Ultra</button>
+            </div>
+          </div>
+
+          <div class="launch-row">
+            <div class="launch-meta">
+              <span class="launch-driver" id="launch-driver">Pip the Fox</span>
+              <span class="launch-sub" id="launch-sub">8 racers · 3 laps · items on</span>
+            </div>
+            <button id="btn-race" class="btn-race">
+              <span class="btn-race-glow"></span>
+              <span class="btn-race-label">Start Race</span>
+              <kbd>Enter</kbd>
+            </button>
+          </div>
+        </section>
+      </div>
+
+      <footer class="menu-foot">
+        <div class="keys">
+          <span class="keys-p1"><b>P1</b><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Drive · <kbd>LShift</kbd> Drift · <kbd>Space</kbd> Item</span>
+          <span class="keys-p2"><b>P2</b><kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd> Drive · <kbd>RShift</kbd> Drift · <kbd>/</kbd> Item</span>
+          <span class="keys-meta"><kbd>R</kbd> / <kbd>.</kbd> Reset · <kbd>Esc</kbd> Pause</span>
+        </div>
+        <div class="credit">All worlds generated in-browser · Three.js · WebAudio</div>
+      </footer>
+    </section>
+
+    <!-- ───────────────────────── HUD ───────────────────────── -->
+    <section id="hud" class="hud hidden" aria-label="Race HUD">
+      <div class="hud-top-left">
+        <div class="position-card">
+          <span class="position-num" id="hud-position">8<sup>th</sup></span>
+          <span class="position-total"><em>of</em> 8</span>
+          <span class="position-label">Position</span>
+        </div>
+        <div class="mini-stats">
+          <div class="mini-stat lap-stat">
+            <span class="mini-label">Lap</span>
+            <span class="mini-value"><b id="hud-lap">1</b><em>/<span id="hud-lap-total">3</span></em></span>
+          </div>
+          <div class="mini-stat coin-stat">
+            <span class="mini-label">Coins</span>
+            <span class="mini-value"><span class="coin-icon" aria-hidden="true"></span><b id="hud-coins">0</b></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hud-top-center">
+        <span class="hud-track" id="hud-track">Sunbeam Speedway</span>
+        <span class="hud-time" id="hud-time">00:00.000</span>
+        <span class="hud-best" id="hud-best">Best lap —</span>
+      </div>
+
+      <div class="hud-top-right">
+        <div class="minimap-shell">
+          <canvas id="minimap" width="440" height="440" aria-label="Minimap"></canvas>
+          <span class="minimap-tag">Live map</span>
+        </div>
+      </div>
+
+      <div class="hud-bottom-left">
+        <div class="item-panel">
+          <div id="item-slot" class="item-slot">
+            <span class="item-ring"></span>
+            <span id="hud-item-icon" class="item-icon"></span>
+            <span class="item-key"><kbd>Space</kbd></span>
+          </div>
+          <div class="item-copy">
+            <span class="item-name" id="hud-item-name">No item</span>
+            <span class="item-tip" id="hud-item-tip">Drive through a ? box</span>
+          </div>
+        </div>
+        <div id="drift-meter" class="drift-meter">
+          <span class="drift-label">Drift charge</span>
+          <span class="drift-bar"><i id="drift-fill"></i></span>
+          <span class="drift-tier" id="drift-tier"></span>
+        </div>
+      </div>
+
+      <div class="hud-bottom-right">
+        <div class="speedo" id="speedo">
+          <div class="speedo-ring" id="speed-ring"></div>
+          <span class="speed-num" id="hud-speed">0</span>
+          <span class="speed-unit">km/h</span>
+          <span class="speed-arc"></span>
+        </div>
+        <div id="boost-badge" class="boost-badge">BOOST</div>
+      </div>
+
+      <button id="btn-pause" class="hud-pause" aria-label="Pause"><span class="pause-glyph" aria-hidden="true"></span></button>
+    </section>
+
+    <!-- ───────────────────────── Split-screen HUD ───────────────────────── -->
+    <section id="hud-split" class="hud-split hidden" aria-label="Split-screen HUD">
+      <div class="split-hud-card p1">
+        <div class="split-head">
+          <span class="split-tag">P1</span>
+          <span class="split-pos" id="split-p1-pos">8<sup>th</sup></span>
+          <span class="split-lap"><em>Lap</em><b id="split-p1-lap">1</b><span>/<span id="split-p1-laps">3</span></span></span>
+          <span class="split-coins"><span class="coin-icon" aria-hidden="true"></span><b id="split-p1-coins">0</b></span>
+        </div>
+        <div class="split-foot">
+          <span class="split-item"><i id="split-p1-item-icon" aria-hidden="true"></i><span id="split-p1-item-name">No item</span><kbd>Space</kbd></span>
+          <span class="split-speed"><b id="split-p1-speed">0</b><em>km/h</em></span>
+        </div>
+        <span class="split-drift"><i id="split-p1-drift"></i></span>
+      </div>
+
+      <div class="split-hud-card p2">
+        <div class="split-head">
+          <span class="split-tag">P2</span>
+          <span class="split-pos" id="split-p2-pos">8<sup>th</sup></span>
+          <span class="split-lap"><em>Lap</em><b id="split-p2-lap">1</b><span>/<span id="split-p2-laps">3</span></span></span>
+          <span class="split-coins"><span class="coin-icon" aria-hidden="true"></span><b id="split-p2-coins">0</b></span>
+        </div>
+        <div class="split-foot">
+          <span class="split-item"><i id="split-p2-item-icon" aria-hidden="true"></i><span id="split-p2-item-name">No item</span><kbd>/</kbd></span>
+          <span class="split-speed"><b id="split-p2-speed">0</b><em>km/h</em></span>
+        </div>
+        <span class="split-drift"><i id="split-p2-drift"></i></span>
+      </div>
+
+      <div class="split-divider" aria-hidden="true"></div>
+      <button id="btn-pause-split" class="hud-pause split-pause" aria-label="Pause"><span class="pause-glyph" aria-hidden="true"></span></button>
+    </section>
+
+    <!-- ───────────────────────── Overlays ───────────────────────── -->
+    <div id="countdown" class="countdown hidden" aria-live="assertive"><span></span><em></em></div>
+
+    <div id="race-message" class="race-message hidden" aria-live="polite">
+      <strong id="message-title"></strong>
+      <span id="message-sub"></span>
+    </div>
+
+    <div id="pause" class="overlay pause hidden">
+      <div class="modal pause-modal">
+        <span class="eyebrow"><em>| |</em> Pit stop</span>
+        <h2>Race paused</h2>
+        <p class="modal-track"><span id="pause-track">Sunbeam Speedway</span> · <span id="pause-driver">Pip</span></p>
+        <div class="pause-buttons">
+          <button id="btn-resume" class="btn primary">Resume <kbd>Esc</kbd></button>
+          <button id="btn-restart" class="btn">Restart Race</button>
+          <button id="btn-quit" class="btn ghost">Quit to Menu</button>
+        </div>
+        <div class="pause-settings">
+          <label class="switch"><input id="toggle-music" type="checkbox" checked /><span></span> Music</label>
+          <label class="switch"><input id="toggle-sfx" type="checkbox" checked /><span></span> Sound FX</label>
+        </div>
+        <div class="pause-quality">
+          <span class="pause-quality-label">Graphics · <b id="pause-quality-label">High</b></span>
+          <div class="quality-options" role="group" aria-label="Graphics quality">
+            <button type="button" class="quality-chip" data-quality="low" aria-pressed="false">Low</button>
+            <button type="button" class="quality-chip" data-quality="medium" aria-pressed="false">Medium</button>
+            <button type="button" class="quality-chip active" data-quality="high" aria-pressed="true">High</button>
+            <button type="button" class="quality-chip" data-quality="ultra" aria-pressed="false">Ultra</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="results" class="overlay results hidden">
+      <div class="modal results-modal">
+        <span class="eyebrow" id="results-eyebrow">Race complete</span>
+        <h2 id="results-title">P1 — Beautiful.</h2>
+        <p class="results-sub" id="results-sub">You won at Sunbeam Speedway</p>
+        <div id="gp-summary" class="gp-summary hidden">
+          <div class="gp-summary-head">
+            <span id="gp-cup-name">Coast Cup</span>
+            <em id="gp-progress">Race 1 of 3</em>
+          </div>
+          <div id="gp-standings" class="gp-standings"></div>
+        </div>
+        <div class="podium" id="podium"></div>
+        <div class="results-table">
+          <div class="results-head"><span>Pos</span><span>Racer</span><span>Time</span><span>Best lap</span></div>
+          <div id="results-list"></div>
+        </div>
+        <div class="results-actions">
+          <button id="btn-again" class="btn primary">Race Again</button>
+          <button id="btn-next" class="btn">Next Circuit →</button>
+          <button id="btn-tracks" class="btn ghost">Change Track</button>
+        </div>
+        <p class="results-tip">Tip: hold <kbd>Shift</kbd> through a corner to charge a mini-turbo, then release.</p>
+      </div>
+    </div>
+
+    <div id="help" class="overlay help hidden">
+      <div class="modal help-modal">
+        <button id="btn-close-help" class="modal-close" aria-label="Close">×</button>
+        <span class="eyebrow"><em>?</em> Controls</span>
+        <h2>How to race</h2>
+        <div class="help-grid">
+          <div class="help-block">
+            <h3>One player</h3>
+            <ul>
+              <li><kbd>W</kbd><kbd>↑</kbd> Accelerate</li>
+              <li><kbd>S</kbd><kbd>↓</kbd> Brake / reverse</li>
+              <li><kbd>A</kbd><kbd>D</kbd><kbd>←</kbd><kbd>→</kbd> Steer</li>
+              <li><kbd>Shift</kbd> Hop &amp; drift</li>
+              <li><kbd>Space</kbd> Use item</li>
+              <li><kbd>R</kbd> Recover to track</li>
+              <li><kbd>Esc</kbd> Pause · <kbd>M</kbd> Mute</li>
+            </ul>
+          </div>
+          <div class="help-block">
+            <h3>Two players · split</h3>
+            <ul>
+              <li><b>P1</b> <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> · <kbd>LShift</kbd> drift · <kbd>Space</kbd> item · <kbd>R</kbd> reset</li>
+              <li><b>P2</b> <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd> · <kbd>RShift</kbd> drift · <kbd>/</kbd> item · <kbd>.</kbd> reset</li>
+              <li>Both players race the same 8-kart field.</li>
+              <li>Pick P2's racer by tapping the P2 slot, then a portrait.</li>
+              <li>Split-screen races use Quick Race.</li>
+            </ul>
+          </div>
+          <div class="help-block">
+            <h3>Race craft</h3>
+            <ul class="tips">
+              <li><b>Drift boost.</b> Hold Shift and steer. Let go after the sparks turn orange or purple.</li>
+              <li><b>Coins.</b> Each coin raises your top speed. Ten is the cap.</li>
+              <li><b>Items.</b> Red shells chase the racer ahead. Bananas stay where you drop them.</li>
+              <li><b>Boost pads.</b> Hit the glowing chevrons for a free burst of speed.</li>
+              <li><b>Off-road.</b> Grass and snow kill your speed — stay on the tarmac.</li>
+            </ul>
+          </div>
+          <div class="help-block">
+            <h3>Touch</h3>
+            <ul>
+              <li>Steer with the left pads.</li>
+              <li>Hold <b>Drift</b> through corners.</li>
+              <li>Tap <b>Item</b> to fire.</li>
+              <li>Acceleration is automatic.</li>
+            </ul>
+            <p class="help-note">On phones, rotate to landscape for the full dashboard.</p>
+          </div>
+        </div>
+        <button id="btn-help-close-2" class="btn primary">Back to the grid</button>
+      </div>
+    </div>
+
+    <div id="touch" class="touch-controls hidden" aria-label="Touch controls">
+      <div class="touch-steer">
+        <button id="touch-left" class="touch-btn steer" aria-label="Steer left"><span class="steer-glyph" data-dir="left" aria-hidden="true"></span></button>
+        <button id="touch-right" class="touch-btn steer" aria-label="Steer right"><span class="steer-glyph" data-dir="right" aria-hidden="true"></span></button>
+      </div>
+      <div class="touch-actions">
+        <button id="touch-drift" class="touch-btn drift" aria-label="Drift">DRIFT</button>
+        <button id="touch-item" class="touch-btn item" aria-label="Use item">ITEM</button>
+      </div>
+      <button id="touch-pause" class="touch-btn pause" aria-label="Pause"><span class="pause-glyph" aria-hidden="true"></span></button>
+    </div>
+
+    <div id="webgl-fallback" class="overlay hidden">
+      <div class="modal">
+        <h2>WebGL unavailable</h2>
+        <p>Turbo Tales needs WebGL 2. Try a recent version of Chrome, Safari, Firefox or Edge with hardware acceleration enabled.</p>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/game.js?v=20261108"></script>
+</body>
+</html>
